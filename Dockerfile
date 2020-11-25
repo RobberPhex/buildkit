@@ -18,6 +18,7 @@ ARG ALPINE_VERSION=3.12
 
 # git stage is used for checking out remote repository sources
 FROM --platform=$BUILDPLATFORM alpine:${ALPINE_VERSION} AS git
+RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.aliyun.com/g' /etc/apk/repositories
 RUN apk add --no-cache git
 
 # xgo is a helper for golang cross-compilation
@@ -26,6 +27,7 @@ FROM --platform=$BUILDPLATFORM tonistiigi/xx:golang@sha256:6f7d999551dd471b58f70
 # gobuild is base stage for compiling go/cgo
 FROM --platform=$BUILDPLATFORM golang:1.13-buster AS gobuild-minimal
 COPY --from=xgo / /
+RUN sed -i 's/deb.debian.org/mirrors.ustc.edu.cn/g' /etc/apt/sources.list && sed -i 's/security.debian.org/mirrors.ustc.edu.cn/g' /etc/apt/sources.list
 RUN apt-get update && apt-get install --no-install-recommends -y libseccomp-dev file
 
 # on amd64 you can also cross-compile to other platforms
@@ -60,11 +62,12 @@ FROM gobuild-$BUILDARCH-$TARGETARCH AS gobuild-base
 FROM git AS runc-src
 ARG RUNC_VERSION
 WORKDIR /usr/src
-RUN git clone https://github.com/opencontainers/runc.git runc \
+RUN git clone https://gitee.com/RobberPhex/runc.git runc \
   && cd runc && git checkout -q "$RUNC_VERSION"
 
 # build runc binary
 FROM gobuild-base AS runc
+ENV GOPROXY=https://goproxy.cn
 WORKDIR $GOPATH/src/github.com/opencontainers/runc
 ARG TARGETPLATFORM
 RUN --mount=from=runc-src,src=/usr/src/runc,target=. --mount=target=/root/.cache,type=cache \

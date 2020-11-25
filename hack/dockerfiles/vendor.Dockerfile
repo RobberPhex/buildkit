@@ -1,5 +1,6 @@
 # syntax = docker/dockerfile:1.1-experimental
 FROM golang:1.13-alpine AS vendored
+RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.aliyun.com/g' /etc/apk/repositories
 RUN  apk add --no-cache git
 WORKDIR /src
 RUN --mount=target=/src,rw \
